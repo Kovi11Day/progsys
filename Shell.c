@@ -9,6 +9,13 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+int num_elements (char** array){
+  int size = 0;
+  while (array[size] != NULL)
+    ++size;
+  return size;
+}
+
 extern int yyparse_string(char *);
 
  bool interactive_mode = 1; // par défaut on utilise readline 
@@ -232,11 +239,15 @@ main (int argc, char **argv)
   while (1){
     if (my_yyparse () == 0) {  /* L'analyse a abouti */   
       afficher_expr(ExpressionAnalysee);
-      fflush(stdout);
+      //fflush(stdout);
+      status=evaluer_expr(ExpressionAnalysee);
       expression_free(ExpressionAnalysee);
     }
     else {
       /* L'analyse de la ligne de commande a donné une erreur */
+      afficher_expr(ExpressionAnalysee);
+      fflush(stdout);
+      expression_free(ExpressionAnalysee);
     }
   }
   return 0;
