@@ -7,8 +7,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <stdlib.h>
-
-
+#include <time.h>
 
 void internal_cmd_exit(){
   raise(9);//send signal to calling process
@@ -61,7 +60,7 @@ void remote_add (Expression *e){
   pid_t pid[num_remote_shell]; //myShell: pid of each son
   
   for (int i = 0; i < num_remote_shell; ++i)
-    pipe (tube[i]);
+    pipe (&tube1[i]);
 
   //ACTION MY SHELL
   for (int i = 0; i < num_remote_shell; ++i){
@@ -72,9 +71,9 @@ void remote_add (Expression *e){
 
       pid_t pid_remoteShell_i;
 
-      if ((pid_remoteShell_i = fork()) == 0){
+      //if ((pid_remoteShell_i = fork()) == 0){
 	//i am remoteShell_i
-	execlp("ssh", "ssh", 
+	//execlp("ssh", "ssh", 
 	
       
 
@@ -84,9 +83,11 @@ void remote_add (Expression *e){
   for (int i = 0; i < num_remote_shell; ++i){
     wait(NULL);
   }
-  return 0;
+  return;
     
 }
+
+void remote_all (Expression *e){}
 
 void internal_cmd_remote(Expression *e){
 

@@ -26,8 +26,7 @@ void execute_sequence_command(Expression *e){
   }
   
 }
-   
-    
+  
     
   
  /*
@@ -41,6 +40,22 @@ void execute_simple_command(Expression *e){
     internal_cmd_remote(e);
     return;
   }
+  else if (!strcmp (e->arguments[0], "hostname")){
+    internal_cmd_host();
+    return;
+  }
+  else if (!strcmp (e->arguments[0], "echo")){
+    internal_cmd_echo(e);
+    return;
+  }
+  else if (!strcmp (e->arguments[0], "kill")){
+    internal_cmd_kill(e);
+    return;
+  }
+   else if (!strcmp (e->arguments[0], "date")){
+    internal_cmd_date(e);
+    return;
+   }
   
   int tmp;
   int pid = fork();
