@@ -50,49 +50,95 @@ void internal_cmd_date(Expression *e){
 
 //////////////////////////remote_shell////////////////////////////////////////
 
+/////redirection dynamique pipe-shell
+
 void remote_add (Expression *e){
-  
+ 
   int num_args = num_elements(e->arguments);
   int num_remote_shell = num_args - 2;
 
-  pid_t myShell = getpid();
-  int tube1[num_remote_shell]; //tubes btw myShell and listeners
-  pid_t pid[num_remote_shell]; //myShell: pid of each son
-  
+  //enregistrer liste de machines
+  char* machines[num_remote_shell];
   for (int i = 0; i < num_remote_shell; ++i)
-    pipe (&tube1[i]);
+    machines[i] = e->arguments[i + 2];
+  
+  
+  pid_t myShell = getpid();
 
+  //tubes btw myShell and listeners
+  int tube1[num_remote_shell][2]; 
+  for (int i = 0; i < num_remote_shell; ++i)
+    pipe (tube1[i]);
+  
+  pid_t pid_listeners[num_remote_shell]; //myShell: pid of each listener
+  
   //ACTION MY SHELL
   for (int i = 0; i < num_remote_shell; ++i){
-    if ((pid[i] = fork()) == 0){
+
+    if ((pid_listeners[i] = fork()) == 0){
       //ACTION FILS LISTENER
-      //i am a listener
+      //i am a listener_i
       //i will create a son to execute  >>ssh name_i
 
+      close (tube1[i][1]);
+      
       pid_t pid_remoteShell_i;
 
-      //if ((pid_remoteShell_i = fork()) == 0){
+      int tube2[2], tube3[2];
+      // int tube_output[2];
+      pipe (tube2);
+      pipe (tube3);
+      //pipe (tube_output);
+
+      close (tube2[0]);
+      close (tube3[1]);
+      //close (tube_output[0]);
+      
+
+      if ((pid_remoteShell_i = fork()) == 0){
+	//ACTION REMOTE SHELL
 	//i am remoteShell_i
-	//execlp("ssh", "ssh", 
+	close (tube2[1]);
+	close (tube3[0]);
 	
+	//execlp("./Shell", "./Shell", NULL); 
+	//ssh-cd-./Shell
+	
+      }else{
+	//ACTION LISTENER AFTER CREATING REMOTE SHELL
+	//i am listener_i
+      }
       
 
     }
+
+    //REMOTE REMOVE DOES WAIT ON LISTENERS AND REMOTE SHELLS
+    //for (int i = 0; i < num_remote_shell; ++i){
+      //wait(NULL);
+      //}
+    
   }
 
-  for (int i = 0; i < num_remote_shell; ++i){
-    wait(NULL);
-  }
-  return;
-    
+      //myShell 
+    for (int i = 0; i < num_remote_shell; ++i){
+      close (tube1[i][0]);
+    }
 }
 
-void remote_all (Expression *e){}
+void remote_all (Expression *e){
+  ////
+}
+
+void remote_name_cmd(Expression *e){
+  //redirection stdout -> listener number #name
+}
 
 void internal_cmd_remote(Expression *e){
 
   if (!strcmp (e->arguments[1], "add"))
     remote_add(e);
-    if (!strcmp (e->arguments[1], "all"))
+  else if (!strcmp (e->arguments[1], "all"))
     remote_all(e);
+  else //remote nom-machine commande
+    remote_name_cmd(e);
 }
