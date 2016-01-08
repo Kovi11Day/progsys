@@ -5,10 +5,15 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/types.h> 
+#include <sys/wait.h>
 
 #define NB_ARGS 50
 #define TAILLE_ID 500
 #define MAX_MACHINE 50
+
+#define MAX_PILE 20
+char* list_of_directories[MAX_PILE];
 
 int num_elements (char** array);
 
