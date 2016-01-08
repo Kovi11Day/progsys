@@ -53,6 +53,17 @@ void internal_cmd_date(Expression *e){
 //////////////////////////remote_shell////////////////////////////////////////
 
 /////redirection dynamique pipe-shell
+void setpath_exec(int i){
+  //default path when listeners created
+  dup2 (tube1[i][0], STDIN_FILENO);
+  dup2 (tube2[1], STDOUT_FILENO);
+}
+			 
+
+void setpath_output(){
+  dup2 (tube3[0], STDIN_FILENO);
+  dup2 (tube_output[1], STDOUT_FILENO);
+  }
 
 void remote_add (Expression *e){
  
@@ -72,13 +83,13 @@ void remote_add (Expression *e){
   pid_t myShell = getpid();
 
   //tubes btw myShell and listeners
-  int tube1[num_remote_shell][2]; 
-  for (int i = 0; i < num_remote_shell; ++i)
+
+  for (int i = start; i < num_remote_shell; ++i)
     pipe (tube1[i]);
   
   pid_t pid_listeners[num_remote_shell]; //myShell: pid of each listener
-  
- 
+
+
   for (int i = 0; i < num_remote_shell; ++i){
 
     if ((pid_listeners[i] = fork()) == 0){
@@ -87,25 +98,42 @@ void remote_add (Expression *e){
       //i will create a son to execute  >>ssh name_i
 
       close (tube1[i][1]);
+
       
       pid_t pid_remoteShell_i;
 
-      int tube2[2], tube3[2];
-      // int tube_output[2];
       pipe (tube2);
       pipe (tube3);
-      //pipe (tube_output);
+      pipe (tube_output);
 
       close (tube2[0]);
       close (tube3[1]);
-      //close (tube_output[0]);
+      close (tube_output[0]);
+
+      //default path
+      setpath_exec(i);
+
       
+      if ((pid_remoteShell_i = fork()) == 0){
+	//OUTPUT WINDOW
+	close (tube_output[1]);
+
+	//stdin = tube_output[0]
+	dup2 (tube_output[0], STDIN_FILENO);
+
+	execlp("./xcat.sh", "xcat.sh", NULL);
+      }
 
       if ((pid_remoteShell_i = fork()) == 0){
 	//ACTION REMOTE SHELL
 	//i am remoteShell_i
 	close (tube2[1]);
 	close (tube3[0]);
+
+	//redirection stdin=tube2[0]
+	dup2 (tube2[0], STDIN_FILENO);
+	//redirection stdout=tube3[1]
+	dup2 (tube3[1], STDOUT_FILENO);
 	
 	//execlp("ssh", "ssh", e->arguments[2], NULL);
 	execlp("./Shell", "./Shell", NULL); 
@@ -141,7 +169,23 @@ void remote_all (Expression *e){
 
 void remote_name_cmd(Expression *e){
   //redirection stdout -> listener number #name
+  int i = 0;
+  //retrieve
+  while (!strcmp (e->arguments[1], machines[i]))
+    i++;
+
   
+  
+  //redirection stdout = tube1[i][1]
+  //dup2 (tube1[i][1], STDOUT_FILENO);
+
+  //send sigusr1 
+  printf ("%s\n", e->arguments[2]);
+  
+  
+  
+
+      
 }
 
 void internal_cmd_remote(Expression *e){
