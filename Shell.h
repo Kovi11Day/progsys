@@ -8,8 +8,12 @@
 
 #define NB_ARGS 50
 #define TAILLE_ID 500
+#define MAX_MACHINE 50
 
 int num_elements (char** array);
+
+char* machines[MAX_MACHINE];
+
 
 typedef enum expr_t {
   VIDE,	         		// Commande vide 

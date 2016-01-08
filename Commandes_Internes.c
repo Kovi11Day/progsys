@@ -8,6 +8,8 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
 void internal_cmd_exit(){
   raise(9);//send signal to calling process
@@ -60,8 +62,10 @@ void remote_add (Expression *e){
   //enregistrer liste de machines
   //create list in Shell.h or where they call this function
   //then simply add names to list here
-  char* machines[num_remote_shell];
-  for (int i = 0; i < num_remote_shell; ++i)
+  
+  int start = num_elements(machines);
+  
+  for (int i = start; i < num_remote_shell; ++i)
     machines[i] = e->arguments[i + 2];
   
   
@@ -103,7 +107,8 @@ void remote_add (Expression *e){
 	close (tube2[1]);
 	close (tube3[0]);
 	
-	execlp("bash", "bash", "-i", NULL); 
+	//execlp("ssh", "ssh", e->arguments[2], NULL);
+	execlp("./Shell", "./Shell", NULL); 
 	//ssh-cd-./Shell
 	
       }else{
@@ -118,8 +123,8 @@ void remote_add (Expression *e){
       if (i == num_remote_shell - 2){
 	//REMOTE REMOVE DOES WAIT ON LISTENERS AND REMOTE SHELLS
 	for (int i = 0; i < num_remote_shell; ++i)
-	  wait(NULL);
-      }
+	wait(NULL);
+	}
     }
     
   }
@@ -136,6 +141,7 @@ void remote_all (Expression *e){
 
 void remote_name_cmd(Expression *e){
   //redirection stdout -> listener number #name
+  
 }
 
 void internal_cmd_remote(Expression *e){
