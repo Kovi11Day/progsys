@@ -58,6 +58,8 @@ void remote_add (Expression *e){
   int num_remote_shell = num_args - 2;
 
   //enregistrer liste de machines
+  //create list in Shell.h or where they call this function
+  //then simply add names to list here
   char* machines[num_remote_shell];
   for (int i = 0; i < num_remote_shell; ++i)
     machines[i] = e->arguments[i + 2];
@@ -72,7 +74,7 @@ void remote_add (Expression *e){
   
   pid_t pid_listeners[num_remote_shell]; //myShell: pid of each listener
   
-  //ACTION MY SHELL
+ 
   for (int i = 0; i < num_remote_shell; ++i){
 
     if ((pid_listeners[i] = fork()) == 0){
@@ -101,21 +103,24 @@ void remote_add (Expression *e){
 	close (tube2[1]);
 	close (tube3[0]);
 	
-	//execlp("./Shell", "./Shell", NULL); 
+	execlp("bash", "bash", "-i", NULL); 
 	//ssh-cd-./Shell
 	
       }else{
 	//ACTION LISTENER AFTER CREATING REMOTE SHELL
 	//i am listener_i
+	wait(NULL);
       }
       
 
+    }else{
+      //myShell
+      if (i == num_remote_shell - 2){
+	//REMOTE REMOVE DOES WAIT ON LISTENERS AND REMOTE SHELLS
+	for (int i = 0; i < num_remote_shell; ++i)
+	  wait(NULL);
+      }
     }
-
-    //REMOTE REMOVE DOES WAIT ON LISTENERS AND REMOTE SHELLS
-    //for (int i = 0; i < num_remote_shell; ++i){
-      //wait(NULL);
-      //}
     
   }
 
