@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
 
 #define NB_ARGS 50
 #define TAILLE_ID 500
@@ -13,6 +14,9 @@
 int num_elements (char** array);
 
 char* machines[MAX_MACHINE];
+int tube1[MAX_MACHINE][2];
+int tube2[2]; int tube3[2];
+int tube_output[2];
 
 
 typedef enum expr_t {
