@@ -55,7 +55,16 @@ void execute_simple_command(Expression *e){
    else if (!strcmp (e->arguments[0], "date")){
     internal_cmd_date(e);
     return;
+   }  
+   else if (!strcmp (e->arguments[0], "cd")){
+    internal_cmd_cd(e);
+    return;
    }
+   else if (!strcmp (e->arguments[0], "pwd")){
+    internal_cmd_pwd(e);
+    return;
+   }
+  
   
   int tmp;
   int pid = fork();
