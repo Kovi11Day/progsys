@@ -46,6 +46,17 @@ void internal_cmd_date(Expression *e){
   
   printf("%s\n", c_time_string);
 }
+void internal_cmd_cd (Expression *e){
+	if(e->arguments[1] != NULL)
+		chdir(e->arguments[1]);
+	else
+		chdir(getenv("HOME"));
+}
+void internal_cmd_pwd (Expression *e){
+int i;
+	for(i=0;list_of_directories[i]!=NULL;i++)
+		printf("%s\n",list_of_directories[i]);	
+}
 
 
 //////////////////////////remote_shell////////////////////////////////////////

@@ -126,7 +126,17 @@ expression_free(Expression *e)
 
   free(e);
 }
-
+/*
+ * get the current path.
+ * return : the current path.
+*/
+char* getpwd(){
+	char cwd[1024];
+	char* ret = getcwd(cwd, sizeof(cwd));
+	if (ret ==NULL)
+		perror("pwd failed");
+	return ret;
+} 
 
 /*
  * Lecture de la ligne de commande à l'aide de readline en mode interactif
@@ -224,6 +234,7 @@ my_yyparse(void)
 int
 main (int argc, char **argv) 
 {
+	list_of_directories[0] = getpwd();
 
   // faire en sorte qu'interactive_mode = 0 lorsque le shell est distant 
   
