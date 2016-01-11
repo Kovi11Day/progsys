@@ -49,129 +49,104 @@ void internal_cmd_date(Expression *e){
   printf("%s\n", c_time_string);
 }
 void internal_cmd_cd (Expression *e){
-	if(e->arguments[1] != NULL)
-		chdir(e->arguments[1]);
-	else
-		chdir(getenv("HOME"));
+  if(e->arguments[1] != NULL)
+    chdir(e->arguments[1]);
+  else
+    chdir(getenv("HOME"));
 }
 void internal_cmd_pwd (Expression *e){
-int i;
-	for(i=0;list_of_directories[i]!=NULL;i++)
-		printf("%s\n",list_of_directories[i]);	
+  int i;
+  for(i=0;list_of_directories[i]!=NULL;i++)
+    printf("%s\n",list_of_directories[i]);	
 }
 
 
 //////////////////////////remote_shell////////////////////////////////////////
 
-/////redirection dynamique pipe-shell
-void setpath_exec(int i){
-  //default path when listeners created
-  dup2 (tube1[i][0], STDIN_FILENO);
-  dup2 (tube2[1], STDOUT_FILENO);
-}
-			 
-
-void setpath_output(){
-  dup2 (tube3[0], STDIN_FILENO);
-  dup2 (tube_output[1], STDOUT_FILENO);
-  }
-
-void remote_add (Expression *e){
- 
-  int num_args = num_elements(e->arguments);
-  int num_remote_shell = num_args - 2;
-
-  //enregistrer liste de machines
-  //create list in Shell.h or where they call this function
-  //then simply add names to list here
+void remote_add(Expression *e){
+  setvbuf (stdin, NULL, _IONBF, 0);
+  int tube_display_results[2]; pipe (tube_display_results);
+  int tube_send_cmd[2]; pipe (tube_send_cmd);
   
-  int start = num_elements(machines);
+
+  f_send_cmd = fdopen (tube_send_cmd[1], "w");
+  setvbuf (f_send_cmd, NULL, _IOLBF, 0);
   
-  for (int i = start; i < num_remote_shell; ++i)
-    machines[i] = e->arguments[i + 2];
-  
-  
-  pid_t myShell = getpid();
+  pid_t pid_remoteShell;
 
-  //tubes btw myShell and listeners
+  if ((pid_remoteShell = fork()) == 0){
+    //remote shell
+    setsid (); //remote process in bg
+    int tube_send_results[2]; pipe (tube_send_results);
+    pid_t pid_tee;
+    if ((pid_tee = fork()) == 0){
+      //TEE_i
+      close (tube_send_results[1]);
+      dup2 (tube_send_results[0], STDIN_FILENO);
+      close (tube_send_results[0]);
 
-  for (int i = start; i < num_remote_shell; ++i)
-    pipe (tube1[i]);
-  
-  pid_t pid_listeners[num_remote_shell]; //myShell: pid of each listener
+      close (tube_display_results[0]);
+      dup2 (tube_display_results[1], STDOUT_FILENO);
+      close (tube_display_results[1]);
 
-
-  for (int i = 0; i < num_remote_shell; ++i){
-
-    if ((pid_listeners[i] = fork()) == 0){
-      //ACTION FILS LISTENER
-      //i am a listener_i
-      //i will create a son to execute  >>ssh name_i
-
-      close (tube1[i][1]);
-
+      execlp ("tee", "tee", NULL);
+      printf ("MY_ERROR: execlp TEE failed\n");
+    }else{
       
-      pid_t pid_remoteShell_i;
+      //REMOTE_SHELL_i
+      close (tube_display_results[0]); close (tube_display_results[1]);
 
-      pipe (tube2);
-      pipe (tube3);
-      pipe (tube_output);
-
-      close (tube2[0]);
-      close (tube3[1]);
-      close (tube_output[0]);
-
-      //default path
-      setpath_exec(i);
-
+      setvbuf (stdin, NULL, _IOLBF, 0);
+      close (tube_send_cmd[1]); fclose (f_send_cmd);
+      dup2 (tube_send_cmd[0], STDIN_FILENO);
+      close (tube_send_cmd[0]);
       
-      if ((pid_remoteShell_i = fork()) == 0){
-	//OUTPUT WINDOW
-	close (tube_output[1]);
+      setvbuf (stdout, NULL, _IONBF, 0);
+      close (tube_send_results[0]);
+      dup2 (tube_send_results[1], STDOUT_FILENO);
+      close (tube_send_results[1]);
 
-	//stdin = tube_output[0]
-	dup2 (tube_output[0], STDIN_FILENO);
 
-	execlp("./xcat.sh", "xcat.sh", NULL);
-      }
+      execlp ("ssh", "ssh", "infini1", NULL);
+      printf ("MY_ERROR: execlp SSH failed\n");
+    }
+  }else{
+    //myShell
+    pid_t window;
+    if ((window = fork()) == 0){
+      //OUTPUT WINDOW_i
+      setvbuf (stdin, NULL, _IONBF, 0);      
+      close (tube_display_results[1]);
+      dup2 (tube_display_results[0], STDIN_FILENO);
+      close (tube_display_results[0]);
 
-      if ((pid_remoteShell_i = fork()) == 0){
-	//ACTION REMOTE SHELL
-	//i am remoteShell_i
-	close (tube2[1]);
-	close (tube3[0]);
-
-	//redirection stdin=tube2[0]
-	dup2 (tube2[0], STDIN_FILENO);
-	//redirection stdout=tube3[1]
-	dup2 (tube3[1], STDOUT_FILENO);
-	
-	//execlp("ssh", "ssh", e->arguments[2], NULL);
-	execlp("./Shell", "./Shell", NULL); 
-	//ssh-cd-./Shell
-	
-      }else{
-	//ACTION LISTENER AFTER CREATING REMOTE SHELL
-	//i am listener_i
-	wait(NULL);
-      }
-      
-
+      execlp ("./xcat.sh", "xcat.sh", NULL);
+      printf ("MY_ERROR: execlp XCAT.SH failed\n");
     }else{
       //myShell
-      if (i == num_remote_shell - 2){
-	//REMOTE REMOVE DOES WAIT ON LISTENERS AND REMOTE SHELLS
-	for (int i = 0; i < num_remote_shell; ++i)
-	wait(NULL);
-	}
-    }
-    
-  }
+      close (tube_display_results[0]); close (tube_display_results[1]);
+      //cpy_myShell_stdout = STDOUT_FILENO;
 
-      //myShell 
-    for (int i = 0; i < num_remote_shell; ++i){
-      close (tube1[i][0]);
+      //dup2 (tube_send_cmd[1], STDOUT_FILENO);
+      //close (tube_send_cmd[1]);
+
+      close (tube_send_cmd[0]);
+      sleep(0.01);
+      fprintf(f_send_cmd, "%s\n", "cd progsys/projet/mybranch2/progsys");
+      fprintf(f_send_cmd, "%s\n", "./Shell");
+      /*Expression* init1 = e;
+      Expression* init2 = e;
+      init1->arguments[2] = "cd progsys/projet/mybranch2/progsys";
+      init2->arguments[2] = "pwd";
+      sleep (0.01); remote_name_cmd (init1);
+      sleep (0.01); remote_name_cmd (init2);*/
+      
+      /*sleep (0.01);
+      printf ("cd progsys/projet/mybranch2/progsys\n");
+      sleep (0.01);
+      printf ("./Shell\n"); */
     }
+  }
 }
 
 void remote_all (Expression *e){
@@ -179,23 +154,14 @@ void remote_all (Expression *e){
 }
 
 void remote_name_cmd(Expression *e){
-  //redirection stdout -> listener number #name
-  int i = 0;
-  //retrieve
-  while (!strcmp (e->arguments[1], machines[i]))
-    i++;
+  fprintf(f_send_cmd, "%s\n", e->arguments[2]);
+  //redirection to tube_i
+  //dup2 (tube_send_cmd[1], STDOUT_FILENO);
+  
+  //fprintf("%s\n", e->arguments[2]); sleep(0.01);
 
-  
-  
-  //redirection stdout = tube1[i][1]
-  //dup2 (tube1[i][1], STDOUT_FILENO);
-
-  //send sigusr1 
-  printf ("%s\n", e->arguments[2]);
-  
-  
-  
-
+  //restore stdout
+  //dup2 (cpy_myShell_stdout, STDOUT_FILENO);
       
 }
 

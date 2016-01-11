@@ -16,6 +16,8 @@ int num_elements (char** array){
   return size;
 }
 
+
+       
 extern int yyparse_string(char *);
 
  bool interactive_mode = 1; // par défaut on utilise readline 
@@ -261,5 +263,11 @@ main (int argc, char **argv)
       expression_free(ExpressionAnalysee);
     }
   }
+
+  /* //CODE FOR REMOTE CMD
+  tube1 = malloc (MAX_MACHINE * sizeof(int*));
+  for (int i = 0; i < MAX_MACHINE; ++i)
+  tube1[i] = malloc(sizeof(int));*/
+
   return 0;
 }

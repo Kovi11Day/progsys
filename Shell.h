@@ -17,13 +17,26 @@
 #define MAX_PILE 20
 char* list_of_directories[MAX_PILE];
 
+
 int num_elements (char** array);
 
-char* machines[MAX_MACHINE];
-int tube1[MAX_MACHINE][2];
-int tube2[2]; int tube3[2];
-int tube_output[2];
+char* machine_connected;
+FILE* f_send_cmd;
+//GLOBAL TUBE: ARRAY OF TUBES
+//int tube_send_cmd[2];
+//int cpy_myShell_stdout;
 
+//char* machines[MAX_MACHINE];
+//pid_t pid_remote_shells[MAX_MACHINE];
+
+
+//int tube1[MAX_MACHINE][2];
+//int tube2[2]; int tube3[2];
+//int tube_output[2];
+
+//STRUCTURE1
+//FILE* write_in_remote;
+//int tube1[MAX_MACHINE][2];
 
 typedef enum expr_t {
   VIDE,	         		// Commande vide 
