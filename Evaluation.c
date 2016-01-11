@@ -64,6 +64,10 @@ void execute_simple_command(Expression *e){
     internal_cmd_pwd(e);
     return;
    }
+   else if (!strcmp (e->arguments[0], "history")){
+    internal_cmd_history(e);
+    return;
+   }
   
   
   int tmp;
@@ -139,12 +143,49 @@ void execute_simple_command(Expression *e){
 			waitpid(pid,&tmp,WNOHANG);
 		}
 }
+/*
+ * execute a pipe command.
+*/
+void execute_pipe_command(Expression *e){
+		int tmp;
+		int fd[2];
+		pipe(fd);
+		
+		int first = fork();
+		
+		if(first==-1)
+			perror("Fork failed");
+		else if(first>0){
+			
+			int second = fork();
+			if (second <-1)
+			perror("second fork failed");
+			else if (second ==0){
+				close (fd[0]);
+				dup2(fd[1],1);
+				execvp (e->gauche->arguments[0],&e->gauche->arguments[0]);
+				perror("first exec failed");
+				exit(0);
+				}
+			else{
+				close (fd[1]);
+				dup2(fd[0],0);
+				execvp (e->droite->arguments[0],&e->droite->arguments[0]);
+				perror("second exec failed");
+				exit(0);
+				
+				}
+		         
+		}
+		else
+				waitpid(first,&tmp,0);
+	
+}
 
-int
-evaluer_expr(Expression *e)
+
+int evaluer_expr(Expression *e)
 {
     
-  //fprintf(stderr,"fonctionnalité non implémentée\n");
   
   switch(e->type){
   case VIDE:
@@ -164,6 +205,12 @@ evaluer_expr(Expression *e)
   case SEQUENCE:
     execute_sequence_command(e);
     break;
+  case PIPE:
+	execute_pipe_command(e);
+	break;
+  default:
+	break;
+	
   }
   
   return 1;
